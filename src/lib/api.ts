@@ -1,8 +1,10 @@
-export async function getProjects() {
-    const res = await fetch(`${process.env.NEXTAUTH_URL}/api/projects`, {cache: "no-store"})
+import Project from "@/model/Project";
+import { connectDB } from "./mongodb";
 
-    if (!res.ok) {
-        throw new Error("Failed to fetch projects")
-    }
-    return res.json();
+export async function getProjects() {
+  await connectDB();
+  const docs = await Project.find({ published: true })
+    .sort({ order: 1 })
+    .lean();
+  return JSON.parse(JSON.stringify(docs));
 }
