@@ -1,3 +1,4 @@
+import { AdminShortcut } from "@/components/site/AdminShortcut";
 import Footer from "@/components/site/Footer";
 import Header from "@/components/site/Header";
 import React from "react";
@@ -10,6 +11,7 @@ export default function SiteLayout({
 }) {
   return (
     <div className="flex min-h-screen flex-col">
+      <AdminShortcut />
       <Header />
       <main className="flex-1">{children}</main>
       <Footer />
