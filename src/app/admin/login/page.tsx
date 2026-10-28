@@ -27,45 +27,45 @@ export default async function LoginPage({
   return (
     <main className="h-screen w-full grid grid-cols-1 lg:grid-cols-2 bg-white overflow-hidden">
       {/* Left Side: Designer Image & Visual Overlay */}
-      <div className="hidden lg:relative lg:flex flex-col justify-between p-12 text-white overflow-hidden bg-zinc-900">
+      <div className="hidden lg:relative lg:flex flex-col justify-between p-12 text-white overflow-hidden bg-[#0B0301]">
         {/* Background Designer Image with dark overlay */}
         <div className="absolute inset-0 z-0">
-          <img 
-            alt="UI Designer working" 
-            className="w-full h-full object-cover opacity-40 mix-blend-overlay scale-105" 
+          <img
+            alt="UI Designer working"
+            className="w-full h-full object-cover opacity-40 mix-blend-overlay scale-105"
             src="https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?auto=format&fit=crop&q=80&w=1200"
           />
-          <div className="absolute inset-0 bg-linear-to-t from-zinc-950 via-zinc-900/80 to-zinc-900/40" />
+          <div className="absolute inset-0 bg-linear-to-t from-[#0B0301] via-[#0B0301]/80 to-[#0B0301]/40" />
         </div>
 
         <div className="relative z-10">
-          <Link className="text-xs font-semibold tracking-wider uppercase text-zinc-300 hover:text-white transition-colors" href="/">
+          <Link className="text-xs font-semibold tracking-wider uppercase text-zinc-400 hover:text-[#F44A00] transition-colors" href="/">
             ← Back to Portfolio
           </Link>
         </div>
 
         <div className="relative z-10 max-w-md my-auto">
-          <span className="inline-block px-3 py-1 mb-4 text-xs font-medium tracking-wide uppercase bg-white/10 backdrop-blur-md text-white rounded-full border border-white/10">
+          <span className="inline-block px-3 py-1 mb-4 text-xs font-medium tracking-wide uppercase bg-[#160602] text-[#F44A00] rounded-full border border-[#F44A00]/30">
             Admin Portal
           </span>
-          <h2 className="text-3xl lg:text-4xl font-bold tracking-tight mb-3">
+          <h2 className="text-3xl lg:text-4xl font-bold tracking-tight mb-3 text-white">
             Manage your craft.
           </h2>
-          <p className="text-zinc-300 text-sm lg:text-base leading-relaxed">
+          <p className="text-zinc-400 text-sm lg:text-base leading-relaxed">
             Update your case studies, publish new projects, and manage your portfolio content effortlessly.
           </p>
         </div>
 
-        <div className="relative z-10 text-xs text-zinc-400">
+        <div className="relative z-10 text-xs text-zinc-500">
           Benjamin Chidera • Product Designer
         </div>
       </div>
 
-      {/* Right Side: Login Form Panel */}
+      {/* Right Side: Login Form Panel (Maintained White Background) */}
       <div className="flex flex-col justify-between p-8 sm:p-12 lg:p-20 bg-white h-full overflow-y-auto">
         {/* Mobile back link */}
         <div className="lg:hidden">
-          <Link className="text-xs font-semibold tracking-wider text-zinc-400 uppercase hover:text-zinc-900 transition-colors" href="/">
+          <Link className="text-xs font-semibold tracking-wider text-zinc-400 uppercase hover:text-[#F44A00] transition-colors" href="/">
             ← Back to Portfolio
           </Link>
         </div>
@@ -111,7 +111,7 @@ export default async function LoginPage({
                 type="email"
                 placeholder="name@example.com"
                 required
-                className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-4 py-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-900 focus:bg-white transition-all duration-200"
+                className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-4 py-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-[#F44A00] focus:ring-1 focus:ring-[#F44A00] focus:bg-white transition-all duration-200"
               />
             </div>
 
@@ -124,17 +124,17 @@ export default async function LoginPage({
                 type="password"
                 placeholder="••••••••"
                 required
-                className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-4 py-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-900 focus:bg-white transition-all duration-200"
+                className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-4 py-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-[#F44A00] focus:ring-1 focus:ring-[#F44A00] focus:bg-white transition-all duration-200"
               />
             </div>
 
-            <button className="w-full mt-2 rounded-xl bg-zinc-900 py-3.5 text-sm font-medium text-white shadow-sm hover:bg-zinc-800 active:scale-[0.99] transition-all duration-200">
+            <button className="w-full mt-2 rounded-xl bg-[#F44A00] py-3.5 text-sm font-medium text-white shadow-sm hover:bg-orange-600 active:scale-[0.99] transition-all duration-200 cursor-pointer">
               Sign in to dashboard
             </button>
           </form>
         </div>
 
-        <div className="hidden lg:block text-xs text-transparent">
+        <div className="hidden lg:block text-xs text-transparent select-none">
           Spacer
         </div>
       </div>
