@@ -3,58 +3,16 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Upload, Loader2, Plus, X, ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { uploadImage } from "@/api-client/upload";
+import { projectsApi } from "@/api-client/projects";
+import { GalleryItem, ImageBlock, Outcome, Project } from "@/types/project";
+import { toBlocks } from "@/lib/block";
+import ImageListEditor from "./ImageListEditor";
 
-type Outcome = { label: string; value: string };
-type GalleryItem = { url: string; alt?: string; caption?: string };
-type Persona = {
-    name: string;
-    role: string;
-    bio: string;
-    goals: string[];
-    frustrations: string[];
-    image?: string;
-};
-type ProcessStep = { phase: string; description: string; image?: string };
-type TypographyItem = { name: string; usage: string; sampleText: string };
-type ColorItem = { name: string; hex: string; usage: string };
 
-type Project = {
-    _id?: string;
-    title?: string;
-    slug?: string;
-    summary?: string;
-    role?: string;
-    client?: string;
-    year?: number;
-    duration?: string;
-    team?: string[];
-    tools?: string[];
-    tags?: string[];
-    coverImage?: string;
-    coverImageAlt?: string;
-    gallery?: GalleryItem[];
-    links?: { live?: string; prototype?: string; figma?: string };
-    outcomes?: Outcome[];
-    introduction?: string;
-    challenge?: string;
-    goals?: string[];
-    personas?: Persona[];
-    process?: ProcessStep[];
-    designSystem?: {
-        typography?: TypographyItem[];
-        colorPalette?: ColorItem[];
-        notes?: string;
-    };
-    solution?: string;
-    reflection?: string;
-    featured?: boolean;
-    order?: number;
-    published?: boolean;
-    metaDescription?: string;
-};
 
 interface ProjectFormProps {
-    initial?: Project;
+    initial?: Partial<Project>;
     onSuccess?: () => void;
 }
 
@@ -66,19 +24,6 @@ function toList(value: FormDataEntryValue | null) {
         .split(",")
         .map((t) => t.trim())
         .filter(Boolean);
-}
-
-async function uploadImage(file: File): Promise<string> {
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const res = await fetch("/api/upload", { method: "POST", body: formData });
-    if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Image upload failed");
-    }
-    const data = await res.json();
-    return data.url;
 }
 
 function Field({
@@ -122,50 +67,16 @@ export default function ProjectForm({ initial, onSuccess }: ProjectFormProps) {
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState("");
     const [coverImage, setCoverImage] = useState(initial?.coverImage || "");
-    const [gallery, setGallery] = useState<GalleryItem[]>(
-        initial?.gallery?.map((g) => ({
-            url: g.url,
-            alt: g.alt || "",
-            caption: g.caption || "",
-        })) || []
-    );
+    const [gallery, setGallery] = useState<ImageBlock[]>(toBlocks(initial?.gallery));
     const [outcomes, setOutcomes] = useState<Outcome[]>(
         initial?.outcomes?.map((o) => ({
             label: o.label || "",
             value: o.value || "",
         })) || []
     );
-    const [personas, setPersonas] = useState<Persona[]>(
-        initial?.personas?.map((p) => ({
-            name: p.name || "",
-            role: p.role || "",
-            bio: p.bio || "",
-            goals: p.goals || [],
-            frustrations: p.frustrations || [],
-            image: p.image || "",
-        })) || []
-    );
-    const [process, setProcess] = useState<ProcessStep[]>(
-        initial?.process?.map((p) => ({
-            phase: p.phase || "",
-            description: p.description || "",
-            image: p.image || "",
-        })) || []
-    );
-    const [typography, setTypography] = useState<TypographyItem[]>(
-        initial?.designSystem?.typography?.map((t) => ({
-            name: t.name || "",
-            usage: t.usage || "",
-            sampleText: t.sampleText || "",
-        })) || []
-    );
-    const [colorPalette, setColorPalette] = useState<ColorItem[]>(
-        initial?.designSystem?.colorPalette?.map((c) => ({
-            name: c.name || "",
-            hex: c.hex || "",
-            usage: c.usage || "",
-        })) || []
-    );
+    const [personas, setPersonas] = useState<ImageBlock[]>(toBlocks(initial?.personas));
+    const [process, setProcess] = useState<ImageBlock[]>(toBlocks(initial?.process));
+    const [designSystem, setDesignSystem] = useState<ImageBlock[]>(toBlocks(initial?.designSystem))
 
     const [basics, setBasics] = useState({
         title: initial?.title || "",
@@ -189,9 +100,6 @@ export default function ProjectForm({ initial, onSuccess }: ProjectFormProps) {
         solution: initial?.solution || "",
         reflection: initial?.reflection || "",
     });
-    const [designSystemNotes, setDesignSystemNotes] = useState(
-        initial?.designSystem?.notes || ""
-    );
     const [links, setLinks] = useState({
         live: initial?.links?.live || "",
         prototype: initial?.links?.prototype || "",
@@ -219,72 +127,30 @@ export default function ProjectForm({ initial, onSuccess }: ProjectFormProps) {
         }
     }
 
-    async function handleGalleryChange(e: React.ChangeEvent<HTMLInputElement>) {
-        const files = Array.from(e.target.files || []);
-        if (files.length === 0) return;
-        setUploading(true);
-        setError("");
-        try {
-            const urls = await Promise.all(files.map(uploadImage));
-            setGallery((prev) => [
-                ...prev,
-                ...urls.map((url) => ({ url, alt: "", caption: "" })),
-            ]);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Image upload failed");
-        } finally {
-            setUploading(false);
-            e.target.value = "";
-        }
-    }
+    // async function handleGalleryChange(e: React.ChangeEvent<HTMLInputElement>) {
+    //     const files = Array.from(e.target.files || []);
+    //     if (files.length === 0) return;
+    //     setUploading(true);
+    //     setError("");
+    //     try {
+    //         const urls = await Promise.all(files.map(uploadImage));
+    //         setGallery((prev) => [
+    //             ...prev,
+    //             ...urls.map((url) => ({ url, alt: "", caption: "" })),
+    //         ]);
+    //     } catch (err) {
+    //         setError(err instanceof Error ? err.message : "Image upload failed");
+    //     } finally {
+    //         setUploading(false);
+    //         e.target.value = "";
+    //     }
+    // }
 
     function updateGallery(i: number, patch: Partial<GalleryItem>) {
         setGallery((prev) => prev.map((g, idx) => (idx === i ? { ...g, ...patch } : g)));
     }
     function updateOutcome(i: number, patch: Partial<Outcome>) {
         setOutcomes((prev) => prev.map((o, idx) => (idx === i ? { ...o, ...patch } : o)));
-    }
-    function updatePersona(i: number, patch: Partial<Persona>) {
-        setPersonas((prev) => prev.map((p, idx) => (idx === i ? { ...p, ...patch } : p)));
-    }
-    function updateProcessStep(i: number, patch: Partial<ProcessStep>) {
-        setProcess((prev) => prev.map((p, idx) => (idx === i ? { ...p, ...patch } : p)));
-    }
-    function updateTypography(i: number, patch: Partial<TypographyItem>) {
-        setTypography((prev) => prev.map((t, idx) => (idx === i ? { ...t, ...patch } : t)));
-    }
-    function updateColor(i: number, patch: Partial<ColorItem>) {
-        setColorPalette((prev) => prev.map((c, idx) => (idx === i ? { ...c, ...patch } : c)));
-    }
-
-    async function handlePersonaImageChange(i: number, e: React.ChangeEvent<HTMLInputElement>) {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        setUploading(true);
-        setError("");
-        try {
-            updatePersona(i, { image: await uploadImage(file) });
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Image upload failed");
-        } finally {
-            setUploading(false);
-            e.target.value = "";
-        }
-    }
-
-    async function handleProcessImageChange(i: number, e: React.ChangeEvent<HTMLInputElement>) {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        setUploading(true);
-        setError("");
-        try {
-            updateProcessStep(i, { image: await uploadImage(file) });
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Image upload failed");
-        } finally {
-            setUploading(false);
-            e.target.value = "";
-        }
     }
 
     function goNext() {
@@ -332,13 +198,9 @@ export default function ProjectForm({ initial, onSuccess }: ProjectFormProps) {
             goals: toList(narrative.goals),
             solution: narrative.solution,
             reflection: narrative.reflection,
-            personas: personas.filter((p) => p.name.trim()),
-            process: process.filter((p) => p.phase.trim() || p.description.trim()),
-            designSystem: {
-                typography: typography.filter((t) => t.name.trim()),
-                colorPalette: colorPalette.filter((c) => c.hex.trim()),
-                notes: designSystemNotes,
-            },
+            personas,
+            process,
+            designSystem,
             links: { live: links.live, prototype: links.prototype, figma: links.figma },
             outcomes: outcomes.filter((o) => o.label.trim() || o.value.trim()),
             gallery: gallery.map(({ url, alt, caption }) => ({ url, alt, caption })),
@@ -348,25 +210,19 @@ export default function ProjectForm({ initial, onSuccess }: ProjectFormProps) {
             published: display.published,
         };
 
-        const url = initial?._id ? `/api/projects/${initial._id}` : "/api/projects";
-        const method = initial?._id ? "PATCH" : "POST";
-
-        const res = await fetch(url, {
-            method,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-        });
-
-        setSaving(false);
-
-        if (!res.ok) {
-            const data = await res.json().catch(() => ({}));
-            setError(data.error || "Something went wrong");
-            return;
+        try {
+            if (initial?._id) {
+                await projectsApi.update(initial._id, body)
+            } else {
+                await projectsApi.create(body)
+            }
+            router.refresh();
+            onSuccess?.()
+        } catch (error) {
+            setError(error instanceof Error ? error.message : "Something went wrong")
+        } finally {
+            setSaving(false)
         }
-
-        router.refresh();
-        if (onSuccess) onSuccess();
     }
 
     const isLastStep = step === STEPS.length - 1;
@@ -587,130 +443,36 @@ export default function ProjectForm({ initial, onSuccess }: ProjectFormProps) {
                 )}
 
                 {step === 3 && (
-                    <div className="space-y-4">
-                        {personas.length === 0 && (
-                            <p className="text-xs text-zinc-400 text-center py-6">
-                                No personas yet — add one if research shaped this project.
-                            </p>
-                        )}
-                        {personas.map((p, i) => (
-                            <div key={i} className="p-3.5 rounded-2xl border border-zinc-200/80 space-y-3">
-                                <div className="flex gap-3">
-                                    {p.image ? (
-                                        <img src={p.image} alt={p.name || "Persona"} className="w-16 h-16 rounded-xl object-cover shrink-0" />
-                                    ) : (
-                                        <label className="w-16 h-16 rounded-xl border-2 border-dashed border-zinc-200 flex items-center justify-center shrink-0 cursor-pointer hover:border-zinc-400">
-                                            <Upload size={16} className="text-zinc-400" />
-                                            <input type="file" accept="image/*" onChange={(e) => handlePersonaImageChange(i, e)} className="hidden" />
-                                        </label>
-                                    )}
-                                    <div className="flex-1 grid grid-cols-2 gap-2">
-                                        <input value={p.name} onChange={(e) => updatePersona(i, { name: e.target.value })} placeholder="Name, e.g. Sarah" className={inputClass} />
-                                        <input value={p.role} onChange={(e) => updatePersona(i, { role: e.target.value })} placeholder="Role, e.g. Busy parent" className={inputClass} />
-                                    </div>
-                                    <button type="button" onClick={() => setPersonas((prev) => prev.filter((_, idx) => idx !== i))} aria-label="Remove persona" className="self-start p-2 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-50 transition-colors">
-                                        <X size={14} />
-                                    </button>
-                                </div>
-                                <textarea value={p.bio} onChange={(e) => updatePersona(i, { bio: e.target.value })} placeholder="Short bio" rows={2} className={inputClass} />
-                                <div className="grid grid-cols-2 gap-2">
-                                    <input value={p.goals.join(", ")} onChange={(e) => updatePersona(i, { goals: toList(e.target.value) })} placeholder="Goals (comma separated)" className={inputClass} />
-                                    <input value={p.frustrations.join(", ")} onChange={(e) => updatePersona(i, { frustrations: toList(e.target.value) })} placeholder="Frustrations (comma separated)" className={inputClass} />
-                                </div>
-                            </div>
-                        ))}
-                        <button
-                            type="button"
-                            onClick={() => setPersonas((prev) => [...prev, { name: "", role: "", bio: "", goals: [], frustrations: [], image: "" }])}
-                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-700 hover:text-zinc-900"
-                        >
-                            <Plus size={14} /> Add persona
-                        </button>
-                    </div>
+                    <ImageListEditor
+                        value={personas}
+                        onChange={setPersonas}
+                        onUploadingChange={setUploading}
+                        onError={setError}
+                        emptyHint="Upload your persona cards or research boards."
+                        addLabel="Add persona images"
+                    />
                 )}
 
                 {step === 4 && (
-                    <div className="space-y-4">
-                        {process.length === 0 && (
-                            <p className="text-xs text-zinc-400 text-center py-6">
-                                No process steps yet — break down your research, ideation, testing, etc.
-                            </p>
-                        )}
-                        {process.map((p, i) => (
-                            <div key={i} className="p-3.5 rounded-2xl border border-zinc-200/80 space-y-3">
-                                <div className="flex gap-3">
-                                    {p.image ? (
-                                        <img src={p.image} alt={p.phase || "Process step"} className="w-16 h-16 rounded-xl object-cover shrink-0" />
-                                    ) : (
-                                        <label className="w-16 h-16 rounded-xl border-2 border-dashed border-zinc-200 flex items-center justify-center shrink-0 cursor-pointer hover:border-zinc-400">
-                                            <Upload size={16} className="text-zinc-400" />
-                                            <input type="file" accept="image/*" onChange={(e) => handleProcessImageChange(i, e)} className="hidden" />
-                                        </label>
-                                    )}
-                                    <input value={p.phase} onChange={(e) => updateProcessStep(i, { phase: e.target.value })} placeholder="Phase, e.g. Research" className={`${inputClass} flex-1`} />
-                                    <button type="button" onClick={() => setProcess((prev) => prev.filter((_, idx) => idx !== i))} aria-label="Remove step" className="self-start p-2 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-50 transition-colors">
-                                        <X size={14} />
-                                    </button>
-                                </div>
-                                <textarea value={p.description} onChange={(e) => updateProcessStep(i, { description: e.target.value })} placeholder="What happened in this phase" rows={2} className={inputClass} />
-                            </div>
-                        ))}
-                        <button
-                            type="button"
-                            onClick={() => setProcess((prev) => [...prev, { phase: "", description: "", image: "" }])}
-                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-700 hover:text-zinc-900"
-                        >
-                            <Plus size={14} /> Add process step
-                        </button>
-                    </div>
+                    <ImageListEditor
+                        value={process}
+                        onChange={setProcess}
+                        onUploadingChange={setUploading}
+                        onError={setError}
+                        emptyHint="Upload images of your research, ideation, and testing."
+                        addLabel="Add process images"
+                    />
                 )}
 
                 {step === 5 && (
-                    <>
-                        <div className="space-y-2">
-                            <p className="text-xs font-semibold text-zinc-700">Typography</p>
-                            {typography.map((t, i) => (
-                                <div key={i} className="flex items-center gap-2">
-                                    <input value={t.name} onChange={(e) => updateTypography(i, { name: e.target.value })} placeholder="Name, e.g. Heading" className={inputClass} />
-                                    <input value={t.usage} onChange={(e) => updateTypography(i, { usage: e.target.value })} placeholder="Usage, e.g. H1–H3" className={inputClass} />
-                                    <input value={t.sampleText} onChange={(e) => updateTypography(i, { sampleText: e.target.value })} placeholder="Sample text" className={inputClass} />
-                                    <button type="button" onClick={() => setTypography((prev) => prev.filter((_, idx) => idx !== i))} aria-label="Remove typography" className="shrink-0 p-2 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-50 transition-colors">
-                                        <X size={14} />
-                                    </button>
-                                </div>
-                            ))}
-                            <button type="button" onClick={() => setTypography((prev) => [...prev, { name: "", usage: "", sampleText: "" }])} className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-700 hover:text-zinc-900">
-                                <Plus size={14} /> Add typography
-                            </button>
-                        </div>
-
-                        <div className="space-y-2">
-                            <p className="text-xs font-semibold text-zinc-700">Color palette</p>
-                            {colorPalette.map((c, i) => (
-                                <div key={i} className="flex items-center gap-2">
-                                    <input type="color" value={c.hex || "#000000"} onChange={(e) => updateColor(i, { hex: e.target.value })} className="w-10 h-10 rounded-lg border border-zinc-200/80 shrink-0 cursor-pointer" />
-                                    <input value={c.name} onChange={(e) => updateColor(i, { name: e.target.value })} placeholder="Name, e.g. Primary" className={inputClass} />
-                                    <input value={c.hex} onChange={(e) => updateColor(i, { hex: e.target.value })} placeholder="#000000" className={inputClass} />
-                                    <input value={c.usage} onChange={(e) => updateColor(i, { usage: e.target.value })} placeholder="Usage, e.g. Buttons" className={inputClass} />
-                                    <button type="button" onClick={() => setColorPalette((prev) => prev.filter((_, idx) => idx !== i))} aria-label="Remove color" className="shrink-0 p-2 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-50 transition-colors">
-                                        <X size={14} />
-                                    </button>
-                                </div>
-                            ))}
-                            <button type="button" onClick={() => setColorPalette((prev) => [...prev, { name: "", hex: "", usage: "" }])} className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-700 hover:text-zinc-900">
-                                <Plus size={14} /> Add color
-                            </button>
-                        </div>
-
-                        <Field label="Design system notes" hint="Any other system details worth mentioning.">
-                            <textarea
-                                value={designSystemNotes}
-                                onChange={(e) => setDesignSystemNotes(e.target.value)}
-                                rows={2}
-                                className={inputClass}
-                            />
-                        </Field>
-                    </>
+                    <ImageListEditor
+                        value={designSystem}
+                        onChange={setDesignSystem}
+                        onUploadingChange={setUploading}
+                        onError={setError}
+                        emptyHint="Upload your typography, color, and component boards."
+                        addLabel="Add design system images"
+                    />
                 )}
 
                 {step === 6 && (
@@ -746,25 +508,14 @@ export default function ProjectForm({ initial, onSuccess }: ProjectFormProps) {
                 )}
 
                 {step === 7 && (
-                    <div className="space-y-3">
-                        {gallery.map((g, i) => (
-                            <div key={g.url} className="flex gap-3 p-2.5 rounded-2xl border border-zinc-200/80">
-                                <img src={g.url} alt={g.alt || "Gallery preview"} className="w-20 h-20 rounded-xl object-cover shrink-0" />
-                                <div className="flex-1 space-y-2">
-                                    <input value={g.alt || ""} onChange={(e) => updateGallery(i, { alt: e.target.value })} placeholder="Alt text" className={inputClass} />
-                                    <input value={g.caption || ""} onChange={(e) => updateGallery(i, { caption: e.target.value })} placeholder="Caption (optional)" className={inputClass} />
-                                </div>
-                                <button type="button" onClick={() => setGallery((prev) => prev.filter((_, idx) => idx !== i))} aria-label="Remove image" className="self-start p-2 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-50 transition-colors">
-                                    <X size={14} />
-                                </button>
-                            </div>
-                        ))}
-                        <label className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-700 hover:text-zinc-900 cursor-pointer">
-                            {uploading ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-                            Add gallery images
-                            <input type="file" accept="image/*" multiple onChange={handleGalleryChange} disabled={uploading} className="hidden" />
-                        </label>
-                    </div>
+                    <ImageListEditor
+                        value={gallery}
+                        onChange={setGallery}
+                        onUploadingChange={setUploading}
+                        onError={setError}
+                        emptyHint="Upload your gallery boards."
+                        addLabel="Add gallery"
+                    />
                 )}
 
                 {step === 8 && (

@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
-import { getPublishedProjects } from "@/lib/project";
+import { getPublishedProjects } from "@/service/project";
 
 export const metadata = {
     title: "Work",

@@ -1,5 +1,5 @@
+import { connectDB } from "@/lib/mongodb";
 import Profile from "@/model/Profile";
-import { connectDB } from "./mongodb";
 
 export async function getProfile() {
   await connectDB();

@@ -1,6 +1,6 @@
 // src/app/admin/(dashboard)/profile/page.tsx
 import ProfileForm from "@/components/admin/ProfileForm";
-import { getProfile } from "@/lib/profile";
+import { getProfile } from "@/service/profile";
 
 export default async function ProfilePage() {
     const profile = await getProfile();

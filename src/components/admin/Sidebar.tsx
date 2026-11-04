@@ -1,4 +1,3 @@
-// src/components/admin/Sidebar.tsx
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -16,7 +15,7 @@ const navItems = [
 export default function Sidebar({
   mobile,
   onNavigate,
-  unreadCount = 0, // Add unreadCount prop
+  unreadCount = 0,
 }: {
   mobile?: boolean;
   onNavigate?: () => void;
@@ -33,15 +32,11 @@ export default function Sidebar({
       }
     >
       <div className="px-6 py-6 border-b border-orange-500/40">
-        <p className="font-heading font-semibold text-white tracking-tight text-sm">
+        <p className="font-heading font-semibold text-white tracking-tight text-md">
           Benjamin Chidera
         </p>
-        <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/20 text-white mt-1">
-          Admin panel
-        </span>
       </div>
 
-      {/* Main Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
         {navItems.map((item) => {
           const active =
@@ -56,17 +51,16 @@ export default function Sidebar({
               key={item.href}
               href={item.href}
               onClick={onNavigate}
-              className={`flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-semibold transition-all ${active
-                  ? "bg-orange-400 text-white shadow-sm"
-                  : "text-orange-100 hover:bg-orange-400/10 hover:text-white"
+              className={`flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-semibold transition-all ${active
+                ? "bg-orange-400 text-white shadow-sm"
+                : "text-orange-100 hover:bg-orange-400/10 hover:text-white"
                 }`}
             >
               <div className="flex items-center gap-3">
-                <Icon size={16} strokeWidth={2.2} />
+                <Icon size={18} strokeWidth={2.2} />
                 <span>{item.label}</span>
               </div>
 
-              {/* Notification Badge */}
               {isNotifications && unreadCount > 0 && (
                 <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-white text-orange-600 shadow-sm">
                   {unreadCount}
@@ -77,7 +71,6 @@ export default function Sidebar({
         })}
       </nav>
 
-      {/* Bottom Actions */}
       <div className="px-3 py-4 space-y-1 border-t border-orange-500/40 bg-orange-700/20">
         <Link
           href="/"

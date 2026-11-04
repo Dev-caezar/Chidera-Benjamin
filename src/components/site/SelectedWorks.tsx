@@ -1,10 +1,10 @@
-import { getProjects } from "@/lib/api";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
+import { getPublishedProjects } from "@/service/project";
 
 const SelectedWork = async () => {
-  const allProjects = await getProjects();
+  const allProjects = await getPublishedProjects();
   const projects =
     allProjects
       ?.filter((project: any) => project.published)

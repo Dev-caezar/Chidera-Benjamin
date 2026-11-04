@@ -17,6 +17,11 @@ import {
   Globe,
   TrendingUp
 } from "lucide-react";
+import { Project } from "@/types/project";
+import ErrorState from "./ErrorState";
+import { useApi } from "@/hooks/useApi";
+import { projectsApi } from "@/api-client/projects";
+import BrandLoader from "./Loader";
 
 export interface SerializedProject {
   _id: string;
@@ -35,15 +40,14 @@ interface DashboardClientProps {
 }
 
 export default function DashboardClient({ initialProjects = [] }: DashboardClientProps) {
+  const { data, error, loading, reload } = useApi(projectsApi.listAll);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "published" | "drafts">("all");
-
-  // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedProject, setSelectedProject] = useState<SerializedProject | null>(null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
-  const projects = Array.isArray(initialProjects) ? initialProjects : [];
-
+  const projects = useMemo(() => data ?? [], [data]);
   const publishedProjects = useMemo(() => projects.filter((p) => p.published), [projects]);
   const draftProjects = useMemo(() => projects.filter((p) => !p.published), [projects]);
   const publishedRatio = projects.length
@@ -69,10 +73,16 @@ export default function DashboardClient({ initialProjects = [] }: DashboardClien
     setIsModalOpen(true);
   };
 
-  const handleOpenEdit = (project: SerializedProject) => {
+  const handleOpenEdit = (project: Project) => {
     setSelectedProject(project);
     setIsModalOpen(true);
   };
+
+  if (error) return <ErrorState error={error} onRetry={reload} />;
+  if (loading && !data) {
+    return <BrandLoader />;
+  }
+
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8 pb-24 font-poppins text-zinc-900 selection:bg-orange-600 selection:text-white">
@@ -82,9 +92,6 @@ export default function DashboardClient({ initialProjects = [] }: DashboardClien
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-900">
               Projects Dashboard
             </h1>
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-2 rounded-full bg-orange-600 text-white shadow-xs">
-              <Sparkles size={11} className="text-amber-200" /> Admin Workspace
-            </span>
           </div>
           <p className="text-xs sm:text-sm text-zinc-500 mt-1">
             Manage your case studies, draft ideas, and live portfolio showcase.

@@ -1,8 +1,37 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Brand Theme Colors */
+  --admin-accent: #F44A00;
+  --admin-accent-hover: #D94200;
+  --admin-accent-subtle: rgba(244, 74, 0, 0.12);
+  --admin-accent-border: rgba(244, 74, 0, 0.25);
+
+  /* Light Theme */
+  --admin-bg: #fafafa;
+  --admin-surface: #ffffff;
+  --admin-border: #e4e4e7;
+  --admin-text: #18181b;
+  --admin-muted: #71717a;
+  --admin-subtle: #f4f4f5;
+
+  /* Dark Obsidian Theme (Matches Portfolio Aesthetic)
+  --admin-bg: #0B0301;
+  --admin-surface: #160602;
+  --admin-border: rgba(244, 74, 0, 0.2);
+  --admin-text: #ffffff;
+  --admin-muted: #a1a1aa;
+  --admin-subtle: #1f0903;
+  */
+}
+
+@theme inline {
+  --color-admin-bg: var(--admin-bg);
+  --color-admin-surface: var(--admin-surface);
+  --color-admin-border: var(--admin-border);
+  --color-admin-text: var(--admin-text);
+  --color-admin-muted: var(--admin-muted);
+  --color-admin-subtle: var(--admin-subtle);
 }
 
 @theme inline {

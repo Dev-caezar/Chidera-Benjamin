@@ -1,5 +1,14 @@
 import mongoose, { Schema } from "mongoose";
 
+const ImageBlockSchema = new Schema(
+  {
+    url: { type: String, required: true },
+    alt: String,
+    caption: String,
+  },
+  { _id: false },
+);
+
 const ProjectSchema = new Schema(
   {
     slug: { type: String, required: true, unique: true },
@@ -19,29 +28,11 @@ const ProjectSchema = new Schema(
     introduction: String,
     challenge: String,
     goals: [String],
-    personas: [
-      {
-        name: String,
-        role: String,
-        bio: String,
-        goals: [String],
-        frustrations: [String],
-        image: String,
-      },
-    ],
 
-    process: [
-      {
-        phase: String,
-        description: String,
-        image: String,
-      },
-    ],
-    designSystem: {
-      typography: [{ name: String, usage: String, sampleText: String }],
-      colorPalette: [{ name: String, hex: String, usage: String }],
-      notes: String,
-    },
+    personas: [ImageBlockSchema],
+    process: [ImageBlockSchema],
+    designSystem: [ImageBlockSchema],
+
     solution: String,
     outcomes: [{ label: String, value: String }],
     reflection: String,
