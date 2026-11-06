@@ -1,11 +1,14 @@
 // src/components/admin/NotificationsListClient.tsx
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Mail, Info, Check, Trash2, CheckCheck, Reply } from "lucide-react";
 import NotificationModal from "./NotificationModal";
 import type { NotificationItem } from "@/types/notification";
+import { notificationsApi } from "@/api-client/notification";
+import { ApiError } from "@/api-client/http";
+import DashboardLoader from "./Loader";
 
 function formatDate(dateStr: string) {
     const d = new Date(dateStr);
@@ -15,15 +18,22 @@ function formatDate(dateStr: string) {
         : d.toLocaleDateString([], { month: "short", day: "numeric" });
 }
 
-export default function NotificationsListClient({
-    notifications: initial,
-}: {
-    notifications: NotificationItem[];
-}) {
+export default function NotificationsListClient() {
     const router = useRouter();
-    const [notifications, setNotifications] = useState(initial);
+    const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
     const [filter, setFilter] = useState<"all" | "unread" | "contact">("all");
     const [selectedId, setSelectedId] = useState<string | null>(null);
+
+    useEffect(() => {
+        notificationsApi.getAll()
+            .then(setNotifications)
+            .catch((err) => {
+                setError(err instanceof ApiError ? err.message : "Something went wrong")
+            })
+            .finally(() => setLoading(false))
+    }, [])
 
     const selected = notifications.find((n) => n._id === selectedId) || null;
 
@@ -41,24 +51,20 @@ export default function NotificationsListClient({
         setNotifications((prev) =>
             prev.map((n) => (n._id === id ? { ...n, read: true } : n))
         );
-        await fetch(`/api/notifications/${id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ read: true }),
-        });
+        await notificationsApi.markRead(id);
         router.refresh();
     }
 
     async function markAllRead() {
         setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-        await fetch("/api/notifications", { method: "PATCH" });
+        await notificationsApi.markAllRead();
         router.refresh();
     }
 
     async function removeOne(id: string) {
         setNotifications((prev) => prev.filter((n) => n._id !== id));
         if (selectedId === id) setSelectedId(null);
-        await fetch(`/api/notifications/${id}`, { method: "DELETE" });
+        await notificationsApi.remove(id);
         router.refresh();
     }
 
@@ -74,9 +80,21 @@ export default function NotificationsListClient({
         router.refresh();
     }
 
+
+    if (loading) {
+        return (
+            < DashboardLoader />
+        )
+    }
+
+    if (error) {
+        return (
+            <p> {error}</p>
+        )
+    }
+
     return (
         <div className="max-w-full mx-auto space-y-6">
-            {/* Header section */}
             <div className="flex items-center justify-between mb-6 gap-4 border-b border-zinc-200 pb-5">
                 <div>
                     <h1 className="font-heading text-2xl font-bold text-zinc-900 tracking-tight flex items-center gap-2.5">
@@ -102,7 +120,6 @@ export default function NotificationsListClient({
                 )}
             </div>
 
-            {/* Filter Tabs */}
             <div className="flex items-center gap-1 bg-zinc-100 border border-zinc-200 rounded-full p-1.5 w-fit shadow-sm">
                 {(["all", "unread", "contact"] as const).map((f) => (
                     <button
@@ -118,7 +135,6 @@ export default function NotificationsListClient({
                 ))}
             </div>
 
-            {/* Main List Container */}
             <div className="bg-white rounded-2xl border border-zinc-200 overflow-hidden shadow-sm">
                 {filtered.length === 0 ? (
                     <div className="py-16 text-center">

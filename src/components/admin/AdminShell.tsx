@@ -1,40 +1,20 @@
-// src/components/admin/AdminShell.tsx
 "use client";
-import { useState } from "react";
+
 import Sidebar from "./Sidebar";
-import MobileTopBar from "./MobileTopBar";
+import MobileBottomNav from "./BottomNav";
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
-    const [open, setOpen] = useState(false);
-
     return (
-        <div className="min-h-screen bg-red-100 overflow-x-hidden">
-            <div className="md:hidden">
-                <Sidebar mobile onNavigate={() => setOpen(false)} />
-            </div>
-            <div className="hidden md:block">
+        <div className="min-h-screen bg-zinc-50 flex flex-col md:flex-row font-poppins selection:bg-[#F44A00] selection:text-white">
+            <aside className="hidden md:block w-64 shrink-0 fixed inset-y-0 left-0 z-30">
                 <Sidebar />
-            </div>
-
-            <div
-                className={`relative z-10 min-h-screen bg-white transition-all duration-300 ease-in-out md:ml-64 md:transform-none ${open
-                    ? "translate-x-[50%] scale-95 rounded-3xl shadow-2xl"
-                    : "transform-none rounded-none"
-                    }`}
-            >
-                <MobileTopBar open={open} onToggle={() => setOpen((v) => !v)} />
-                <main className="max-w-5xl mx-auto p-6 lg:p-10 relative overflow-hidden rounded-[inherit]">
+            </aside>
+            <div className="flex-1 flex flex-col min-w-0 md:pl-64 pb-24 md:pb-0">
+                <main className="flex-1 max-w-7xl w-full mx-auto p-5 sm:p-6 lg:p-10">
                     {children}
                 </main>
-
-                {open && (
-                    <button
-                        onClick={() => setOpen(false)}
-                        aria-label="Close menu"
-                        className="md:hidden absolute inset-0 z-50"
-                    />
-                )}
             </div>
+            <MobileBottomNav />
         </div>
     );
 }

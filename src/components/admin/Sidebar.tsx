@@ -1,3 +1,4 @@
+// src/components/admin/Sidebar.tsx
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -24,16 +25,10 @@ export default function Sidebar({
   const pathname = usePathname();
 
   return (
-    <aside
-      className={
-        mobile
-          ? "fixed inset-y-0 left-0 z-50 w-[75%] max-w-xs bg-orange-600 flex flex-col shadow-2xl font-poppins"
-          : "flex flex-col w-64 shrink-0 h-screen top-0 bg-orange-600 fixed inset-y-0 left-0 shadow-sm font-poppins"
-      }
-    >
+    <aside className="flex flex-col w-64 h-full bg-orange-600 shadow-sm font-poppins select-none">
       <div className="px-6 py-6 border-b border-orange-500/40">
         <p className="font-heading font-semibold text-white tracking-tight text-md">
-          Benjamin Chidera
+          Chidera Benjamin
         </p>
       </div>
 
@@ -52,8 +47,8 @@ export default function Sidebar({
               href={item.href}
               onClick={onNavigate}
               className={`flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-semibold transition-all ${active
-                ? "bg-orange-400 text-white shadow-sm"
-                : "text-orange-100 hover:bg-orange-400/10 hover:text-white"
+                  ? "bg-orange-400 text-white shadow-sm"
+                  : "text-orange-100 hover:bg-orange-400/10 hover:text-white"
                 }`}
             >
               <div className="flex items-center gap-3">

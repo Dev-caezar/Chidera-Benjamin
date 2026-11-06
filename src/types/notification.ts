@@ -9,3 +9,8 @@ export type NotificationItem = {
   createdAt: string;
   meta?: { email?: string; name?: string };
 };
+
+export interface NotificationResponse {
+  success: boolean;
+  data: NotificationItem[];
+}

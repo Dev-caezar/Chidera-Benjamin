@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Upload, Loader2, Plus, X, Check } from "lucide-react";
+import { Upload, Loader2, Plus, X, Check, Link as LinkIcon, FileText } from "lucide-react";
 
 type Experience = {
     company: string;
@@ -63,13 +63,13 @@ function Field({
     );
 }
 
-async function uploadImage(file: File): Promise<string> {
+async function uploadFile(file: File): Promise<string> {
     const fd = new FormData();
     fd.append("file", file);
     const res = await fetch("/api/upload", { method: "POST", body: fd });
     if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Image upload failed");
+        throw new Error(data.error || "File upload failed");
     }
     return (await res.json()).url;
 }
@@ -77,9 +77,15 @@ async function uploadImage(file: File): Promise<string> {
 export default function ProfileForm({ initial }: { initial: Profile | null }) {
     const router = useRouter();
     const [saving, setSaving] = useState(false);
-    const [uploading, setUploading] = useState(false);
+    const [uploadingHeadshot, setUploadingHeadshot] = useState(false);
+    const [uploadingResume, setUploadingResume] = useState(false);
     const [saved, setSaved] = useState(false);
     const [error, setError] = useState("");
+
+    // Resume input mode toggle: "link" or "upload"
+    const [resumeMode, setResumeMode] = useState<"link" | "upload">(
+        initial?.resumeUrl?.startsWith("http") && !initial.resumeUrl.includes("/uploads/") ? "link" : "upload"
+    );
 
     const [basics, setBasics] = useState({
         name: initial?.name || "",
@@ -117,14 +123,30 @@ export default function ProfileForm({ initial }: { initial: Profile | null }) {
     async function handleHeadshot(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
         if (!file) return;
-        setUploading(true);
+        setUploadingHeadshot(true);
         setError("");
         try {
-            setHeadshot(await uploadImage(file));
+            setHeadshot(await uploadFile(file));
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Upload failed");
+            setError(err instanceof Error ? err.message : "Headshot upload failed");
         } finally {
-            setUploading(false);
+            setUploadingHeadshot(false);
+            e.target.value = "";
+        }
+    }
+
+    async function handleResumeUpload(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setUploadingResume(true);
+        setError("");
+        try {
+            const url = await uploadFile(file);
+            setBasics((b) => ({ ...b, resumeUrl: url }));
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Resume upload failed");
+        } finally {
+            setUploadingResume(false);
             e.target.value = "";
         }
     }
@@ -175,8 +197,8 @@ export default function ProfileForm({ initial }: { initial: Profile | null }) {
                 <div className="flex items-center gap-4">
                     <label className="relative w-20 h-20 rounded-2xl overflow-hidden bg-zinc-50 border-2 border-dashed border-zinc-200 flex items-center justify-center cursor-pointer hover:border-orange-400 transition-colors shrink-0 shadow-sm">
                         {headshot ? (
-                            <img src={headshot} alt="Headshot" className="w-full h-full object-cover" />
-                        ) : uploading ? (
+                            <img src={headshot} alt="Headshot" className="w-full h-full object-contain" />
+                        ) : uploadingHeadshot ? (
                             <Loader2 size={18} className="animate-spin text-orange-600" />
                         ) : (
                             <Upload size={18} className="text-zinc-400" />
@@ -185,7 +207,7 @@ export default function ProfileForm({ initial }: { initial: Profile | null }) {
                             type="file"
                             accept="image/*"
                             onChange={handleHeadshot}
-                            disabled={uploading}
+                            disabled={uploadingHeadshot}
                             className="hidden"
                         />
                     </label>
@@ -285,14 +307,74 @@ export default function ProfileForm({ initial }: { initial: Profile | null }) {
                         className={inputClass}
                     />
                 </Field>
-                <Field label="Resume URL" hint="Link to a PDF (Drive, Dropbox, or an uploaded file).">
-                    <input
-                        value={basics.resumeUrl}
-                        onChange={(e) => setBasics((b) => ({ ...b, resumeUrl: e.target.value }))}
-                        placeholder="https://"
-                        className={inputClass}
-                    />
-                </Field>
+
+                {/* Resume Mode Toggle & Inputs */}
+                <div className="space-y-2 pt-1">
+                    <div className="flex items-center justify-between">
+                        <label className="block text-xs font-semibold text-zinc-700">Resume / CV</label>
+                        <div className="inline-flex items-center bg-zinc-100 p-0.5 rounded-lg border border-zinc-200">
+                            <button
+                                type="button"
+                                onClick={() => setResumeMode("upload")}
+                                className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-md transition-all ${resumeMode === "upload"
+                                    ? "bg-white text-zinc-900 shadow-xs"
+                                    : "text-zinc-500 hover:text-zinc-800"
+                                    }`}
+                            >
+                                <FileText size={12} /> Upload File
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setResumeMode("link")}
+                                className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-md transition-all ${resumeMode === "link"
+                                    ? "bg-white text-zinc-900 shadow-xs"
+                                    : "text-zinc-500 hover:text-zinc-800"
+                                    }`}
+                            >
+                                <LinkIcon size={12} /> External Link
+                            </button>
+                        </div>
+                    </div>
+
+                    {resumeMode === "upload" ? (
+                        <div className="space-y-2">
+                            <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-zinc-200 rounded-xl hover:border-orange-400 hover:bg-zinc-50/50 transition-all cursor-pointer">
+                                <div className="flex flex-col items-center justify-center pt-2 pb-3 text-zinc-400">
+                                    {uploadingResume ? (
+                                        <Loader2 size={18} className="animate-spin text-orange-600 mb-1" />
+                                    ) : (
+                                        <Upload size={18} className="mb-1" />
+                                    )}
+                                    <p className="text-xs font-medium text-zinc-600">
+                                        {uploadingResume ? "Uploading CV..." : "Click to upload PDF resume"}
+                                    </p>
+                                    <p className="text-[10px] text-zinc-400 mt-0.5">PDF format recommended</p>
+                                </div>
+                                <input
+                                    type="file"
+                                    accept=".pdf,.doc,.docx"
+                                    onChange={handleResumeUpload}
+                                    disabled={uploadingResume}
+                                    className="hidden"
+                                />
+                            </label>
+                            {basics.resumeUrl && (
+                                <p className="text-[11px] text-emerald-600 font-medium truncate">
+                                    Current CV file: <a href={basics.resumeUrl} target="_blank" rel="noreferrer" className="underline">{basics.resumeUrl}</a>
+                                </p>
+                            )}
+                        </div>
+                    ) : (
+                        <Field label="" hint="Link to a PDF (Google Drive, Dropbox, Notion, etc.)">
+                            <input
+                                value={basics.resumeUrl}
+                                onChange={(e) => setBasics((b) => ({ ...b, resumeUrl: e.target.value }))}
+                                placeholder="https://drive.google.com/..."
+                                className={inputClass}
+                            />
+                        </Field>
+                    )}
+                </div>
             </Card>
 
             <Card title="Social links">
@@ -386,11 +468,12 @@ export default function ProfileForm({ initial }: { initial: Profile | null }) {
                     </span>
                 )}
                 <button
-                    type="submit"
-                    disabled={saving || uploading}
+                    type="button"
+                    disabled={saving || uploadingHeadshot || uploadingResume}
+                    onClick={handleSubmit}
                     className="inline-flex items-center gap-2 rounded-xl bg-orange-600 px-6 py-3 text-xs font-semibold text-white hover:bg-orange-500 disabled:opacity-50 active:scale-[0.98] transition-all shadow-sm"
                 >
-                    {saving && <Loader2 size={14} className="animate-spin" />}
+                    {(saving || uploadingResume) && <Loader2 size={14} className="animate-spin" />}
                     {saving ? "Saving..." : "Save profile"}
                 </button>
             </div>

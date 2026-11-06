@@ -22,10 +22,8 @@ const SelectedWork = async () => {
 
   return (
     <section id="projects" className="py-16 px-6 md:px-12 bg-white">
-      {/* Container aligned perfectly at max-w-6xl */}
       <div className="max-w-6xl mx-auto">
 
-        {/* Section Header */}
         <div className="flex items-end justify-between mb-10">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-orange-600 mb-1.5">
@@ -44,7 +42,6 @@ const SelectedWork = async () => {
           </Link>
         </div>
 
-        {/* Grid aligned directly with container edge */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
           {projects.map((project: any, index: number) => (
             <Link
@@ -53,15 +50,13 @@ const SelectedWork = async () => {
               className="group block w-full transition-transform duration-300 ease-out hover:-translate-y-1"
             >
               <div className="space-y-3">
-                {/* Compact Image Frame */}
-                <div className="relative w-full aspect-16/10 overflow-hidden rounded-2xl bg-zinc-100 border border-zinc-200/60 shadow-xs transition-all duration-300 group-hover:border-orange-500/40 group-hover:shadow-md">
+                <div className="relative w-full aspect-14/9 overflow-hidden rounded-2xl bg-zinc-100 border border-zinc-200/60 shadow-xs transition-all duration-300 group-hover:border-orange-500/40 group-hover:shadow-md">
                   {project.coverImage ? (
                     <Image
                       src={project.coverImage}
                       alt={project.title}
                       fill
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                      className="object-cover transition-transform duration-700 ease-out group-hover:scale-105 w-full h-full"
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-xs font-mono text-zinc-400">
@@ -70,7 +65,6 @@ const SelectedWork = async () => {
                   )}
                 </div>
 
-                {/* Text Content Flush with Image Edge */}
                 <div className="flex items-start justify-between gap-3 px-0.5">
                   <div>
                     <h3 className="text-base font-bold text-zinc-900 group-hover:text-orange-600 transition-colors duration-200">

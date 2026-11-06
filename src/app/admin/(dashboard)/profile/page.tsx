@@ -1,4 +1,3 @@
-// src/app/admin/(dashboard)/profile/page.tsx
 import ProfileForm from "@/components/admin/ProfileForm";
 import { getProfile } from "@/service/profile";
 

@@ -2,14 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Upload, Loader2, Plus, X, ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { Upload, Loader2, Plus, X, ChevronLeft, ChevronRight, Check, AlertCircle } from "lucide-react";
 import { uploadImage } from "@/api-client/upload";
 import { projectsApi } from "@/api-client/projects";
 import { GalleryItem, ImageBlock, Outcome, Project } from "@/types/project";
 import { toBlocks } from "@/lib/block";
 import ImageListEditor from "./ImageListEditor";
-
-
+import { slugify } from "@/lib/slig";
 
 interface ProjectFormProps {
     initial?: Partial<Project>;
@@ -17,7 +16,7 @@ interface ProjectFormProps {
 }
 
 const inputClass =
-    "w-full rounded-xl border border-zinc-200/80 px-4 py-2.5 text-xs text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-400 transition-all font-poppins";
+    "w-full rounded-xl border border-zinc-200/80 px-4 py-2.5 text-xs text-zinc-900 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-poppins bg-white";
 
 function toList(value: FormDataEntryValue | null) {
     return String(value || "")
@@ -40,7 +39,7 @@ function Field({
     return (
         <div className="space-y-1.5">
             <label className="block text-xs font-semibold text-zinc-700">
-                {label} {required && <span className="text-red-500">*</span>}
+                {label} {required && <span className="text-orange-500">*</span>}
             </label>
             {children}
             {hint && <p className="text-[11px] text-zinc-400">{hint}</p>}
@@ -66,6 +65,8 @@ export default function ProjectForm({ initial, onSuccess }: ProjectFormProps) {
     const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState("");
+    const [successMessage, setSuccessMessage] = useState("");
+
     const [coverImage, setCoverImage] = useState(initial?.coverImage || "");
     const [gallery, setGallery] = useState<ImageBlock[]>(toBlocks(initial?.gallery));
     const [outcomes, setOutcomes] = useState<Outcome[]>(
@@ -76,7 +77,7 @@ export default function ProjectForm({ initial, onSuccess }: ProjectFormProps) {
     );
     const [personas, setPersonas] = useState<ImageBlock[]>(toBlocks(initial?.personas));
     const [process, setProcess] = useState<ImageBlock[]>(toBlocks(initial?.process));
-    const [designSystem, setDesignSystem] = useState<ImageBlock[]>(toBlocks(initial?.designSystem))
+    const [designSystem, setDesignSystem] = useState<ImageBlock[]>(toBlocks(initial?.designSystem));
 
     const [basics, setBasics] = useState({
         title: initial?.title || "",
@@ -127,28 +128,6 @@ export default function ProjectForm({ initial, onSuccess }: ProjectFormProps) {
         }
     }
 
-    // async function handleGalleryChange(e: React.ChangeEvent<HTMLInputElement>) {
-    //     const files = Array.from(e.target.files || []);
-    //     if (files.length === 0) return;
-    //     setUploading(true);
-    //     setError("");
-    //     try {
-    //         const urls = await Promise.all(files.map(uploadImage));
-    //         setGallery((prev) => [
-    //             ...prev,
-    //             ...urls.map((url) => ({ url, alt: "", caption: "" })),
-    //         ]);
-    //     } catch (err) {
-    //         setError(err instanceof Error ? err.message : "Image upload failed");
-    //     } finally {
-    //         setUploading(false);
-    //         e.target.value = "";
-    //     }
-    // }
-
-    function updateGallery(i: number, patch: Partial<GalleryItem>) {
-        setGallery((prev) => prev.map((g, idx) => (idx === i ? { ...g, ...patch } : g)));
-    }
     function updateOutcome(i: number, patch: Partial<Outcome>) {
         setOutcomes((prev) => prev.map((o, idx) => (idx === i ? { ...o, ...patch } : o)));
     }
@@ -182,7 +161,7 @@ export default function ProjectForm({ initial, onSuccess }: ProjectFormProps) {
 
         const body = {
             title: basics.title,
-            slug: basics.slug.trim().toLowerCase(),
+            slug: slugify(basics.slug),
             summary: basics.summary,
             coverImage,
             coverImageAlt: basics.coverImageAlt,
@@ -212,23 +191,51 @@ export default function ProjectForm({ initial, onSuccess }: ProjectFormProps) {
 
         try {
             if (initial?._id) {
-                await projectsApi.update(initial._id, body)
+                await projectsApi.update(initial._id, body);
+                setSuccessMessage("Project updated successfully!");
             } else {
-                await projectsApi.create(body)
+                await projectsApi.create(body);
+                setSuccessMessage("Project created successfully!");
             }
-            router.refresh();
-            onSuccess?.()
+            onSuccess?.();
         } catch (error) {
-            setError(error instanceof Error ? error.message : "Something went wrong")
+            setError(error instanceof Error ? error.message : "Something went wrong while saving the project.");
         } finally {
-            setSaving(false)
+            setSaving(false);
         }
     }
 
     const isLastStep = step === STEPS.length - 1;
 
     return (
-        <form onSubmit={handleSubmit} className="font-poppins">
+        <form onSubmit={handleSubmit} className="font-poppins relative">
+            {/* Success State Overlay / Banner */}
+            {successMessage && (
+                <div className="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center gap-3 shadow-sm animate-in fade-in zoom-in duration-300">
+                    <div className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0">
+                        <Check size={18} />
+                    </div>
+                    <div>
+                        <p className="text-xs font-bold">Success!</p>
+                        <p className="text-xs text-emerald-700">{successMessage}</p>
+                    </div>
+                </div>
+            )}
+
+            {/* Error State Banner */}
+            {error && (
+                <div className="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 flex items-center gap-3 shadow-sm animate-in fade-in zoom-in duration-300">
+                    <div className="w-8 h-8 rounded-full bg-rose-500 text-white flex items-center justify-center shrink-0">
+                        <AlertCircle size={18} />
+                    </div>
+                    <div>
+                        <p className="text-xs font-bold">Validation Error</p>
+                        <p className="text-xs text-rose-700">{error}</p>
+                    </div>
+                </div>
+            )}
+
+            {/* Step Indicators */}
             <div className="flex items-center justify-center gap-1.5 mb-6 overflow-x-auto pb-1">
                 {STEPS.map((label, i) => (
                     <div key={label} className="flex items-center justify-center gap-1.5 shrink-0">
@@ -236,16 +243,16 @@ export default function ProjectForm({ initial, onSuccess }: ProjectFormProps) {
                             type="button"
                             onClick={() => setStep(i)}
                             className={`flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-semibold transition-colors ${i === step
-                                ? "bg-orange-500 text-white"
+                                ? "bg-[#F44A00] text-white shadow-xs"
                                 : i < step
-                                    ? "bg-green-400 text-white"
-                                    : "bg-orange-500 text-white"
+                                    ? "bg-emerald-500 text-white"
+                                    : "bg-zinc-200 text-zinc-600 hover:bg-zinc-300"
                                 }`}
                         >
                             {i < step ? <Check size={12} /> : i + 1}
                         </button>
                         {i < STEPS.length - 1 && (
-                            <div className={`w-4 h-px ${i < step ? "bg-zinc-900/30" : "bg-zinc-200"}`} />
+                            <div className={`w-4 h-px ${i < step ? "bg-emerald-500/50" : "bg-zinc-200"}`} />
                         )}
                     </div>
                 ))}
@@ -254,12 +261,6 @@ export default function ProjectForm({ initial, onSuccess }: ProjectFormProps) {
             <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-4 text-center">
                 Step {step + 1} of {STEPS.length} · {STEPS[step]}
             </p>
-
-            {error && (
-                <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs font-medium text-red-600 mb-4">
-                    {error}
-                </div>
-            )}
 
             <div className="space-y-4 min-h-80">
                 {step === 0 && (
@@ -279,10 +280,10 @@ export default function ProjectForm({ initial, onSuccess }: ProjectFormProps) {
                                     </div>
                                 </div>
                             ) : (
-                                <label className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-zinc-200 rounded-2xl hover:border-zinc-400 hover:bg-zinc-50/50 transition-all cursor-pointer">
+                                <label className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-zinc-200 rounded-2xl hover:border-[#F44A00] hover:bg-orange-50/20 transition-all cursor-pointer">
                                     <div className="flex flex-col items-center justify-center pt-4 pb-5 text-zinc-400">
                                         {uploading ? (
-                                            <Loader2 size={22} className="animate-spin text-zinc-600 mb-2" />
+                                            <Loader2 size={22} className="animate-spin text-[#F44A00] mb-2" />
                                         ) : (
                                             <Upload size={22} className="mb-2" />
                                         )}
@@ -315,6 +316,7 @@ export default function ProjectForm({ initial, onSuccess }: ProjectFormProps) {
                                 <input
                                     value={basics.slug}
                                     onChange={(e) => setBasics((b) => ({ ...b, slug: e.target.value }))}
+                                    onBlur={() => setBasics((b) => ({ ...b, slug: slugify(b.slug) }))}
                                     placeholder="e.g. fintech-mobile-app"
                                     className={inputClass}
                                 />
@@ -500,7 +502,7 @@ export default function ProjectForm({ initial, onSuccess }: ProjectFormProps) {
                                     </button>
                                 </div>
                             ))}
-                            <button type="button" onClick={() => setOutcomes((prev) => [...prev, { label: "", value: "" }])} className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-700 hover:text-zinc-900">
+                            <button type="button" onClick={() => setOutcomes((prev) => [...prev, { label: "", value: "" }])} className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#F44A00] hover:text-orange-600">
                                 <Plus size={14} /> Add outcome
                             </button>
                         </div>
@@ -542,7 +544,7 @@ export default function ProjectForm({ initial, onSuccess }: ProjectFormProps) {
                                     type="checkbox"
                                     checked={display.featured}
                                     onChange={(e) => setDisplay((d) => ({ ...d, featured: e.target.checked }))}
-                                    className="w-4 h-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
+                                    className="w-4 h-4 rounded border-zinc-300 text-[#F44A00] focus:ring-[#F44A00]"
                                 />
                                 <span className="text-xs font-medium text-zinc-700">Feature this project on the homepage</span>
                             </label>
@@ -551,7 +553,7 @@ export default function ProjectForm({ initial, onSuccess }: ProjectFormProps) {
                                     type="checkbox"
                                     checked={display.published}
                                     onChange={(e) => setDisplay((d) => ({ ...d, published: e.target.checked }))}
-                                    className="w-4 h-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
+                                    className="w-4 h-4 rounded border-zinc-300 text-[#F44A00] focus:ring-[#F44A00]"
                                 />
                                 <span className="text-xs font-medium text-zinc-700">Publish immediately to live portfolio</span>
                             </label>
@@ -565,7 +567,7 @@ export default function ProjectForm({ initial, onSuccess }: ProjectFormProps) {
                     type="button"
                     onClick={goBack}
                     disabled={step === 0}
-                    className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-semibold text-orange-600 hover:text-orange-500 disabled:opacity-0 disabled:pointer-events-none transition-all"
+                    className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-semibold text-zinc-600 hover:text-zinc-900 disabled:opacity-0 disabled:pointer-events-none transition-all"
                 >
                     <ChevronLeft size={14} /> Back
                 </button>
@@ -574,7 +576,7 @@ export default function ProjectForm({ initial, onSuccess }: ProjectFormProps) {
                     <button
                         type="submit"
                         disabled={saving || uploading}
-                        className="inline-flex items-center gap-2 rounded-xl bg-orange-600 px-6 py-2.5 text-xs font-semibold text-white shadow-md hover:bg-orange-500 disabled:opacity-50 active:scale-[0.98] transition-all"
+                        className="inline-flex items-center gap-2 rounded-xl bg-[#F44A00] px-6 py-2.5 text-xs font-semibold text-white shadow-md hover:bg-orange-600 disabled:opacity-50 active:scale-[0.98] transition-all cursor-pointer"
                     >
                         {saving && <Loader2 size={14} className="animate-spin" />}
                         {saving ? "Saving..." : initial?._id ? "Update Project" : "Create Project"}
@@ -583,7 +585,7 @@ export default function ProjectForm({ initial, onSuccess }: ProjectFormProps) {
                     <button
                         type="button"
                         onClick={goNext}
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-orange-500 px-5 py-2.5 text-xs font-semibold text-white hover:bg-orange-400 active:scale-[0.98] transition-all"
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-[#F44A00] px-5 py-2.5 text-xs font-semibold text-white hover:bg-orange-600 active:scale-[0.98] transition-all cursor-pointer"
                     >
                         Next <ChevronRight size={14} />
                     </button>
